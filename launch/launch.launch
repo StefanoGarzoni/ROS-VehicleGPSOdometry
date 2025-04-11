@@ -1,0 +1,13 @@
+<launch>
+  <!-- Nodo 1: odometria da speed + steer -->
+  <node pkg="first_project" type="odometer" name="odometer" output="screen"/>
+
+  <!-- Nodo 2: odometria da GPS -->
+  <node pkg="first_project" type="gps_odometer" name="gps_odometer" output="screen"/>
+
+  <!-- Nodo 3: tempi settori -->
+  <node pkg="first_project" type="sector_times" name="sector_times" output="screen"/>
+
+  <!-- RViz con configurazione -->
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find first_project)/rviz/config.rviz"/>
+</launch>
