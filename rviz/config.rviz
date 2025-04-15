@@ -1,5 +1,0 @@
-//probabilmente questo file serve direttamente a rviz per salvarsi le configurazioni, lo modificherà lui.
-
-Visualization Manager: Class: "" Displays: - Name: Grid Enabled: true Class: rviz/Grid - Name: TF Enabled: true Class: rviz/TF - Name: Odometry (Odometer) Enabled: true Class: rviz/Odometry Topic: /odom Color: 0;0;1 Frame: odom - Name: Odometry (GPS) Enabled: true Class: rviz/Odometry Topic: /gps_odom Color: 1;0;0 Frame: odom Fixed Frame: odom Name: root Global Options: Background Color: 48;48;48 Fixed Frame: odom
-
-Camera: Type: Orbit Distance: 30 Pitch: 0.785 Yaw: 3.14 Target Frame: odom
