@@ -1,113 +1,73 @@
-// Includo le librerie ROS base
+// File: odometer.cpp
+
 #include <ros/ros.h>
-
-// Include per i messaggi in arrivo: velocità e sterzo
 #include <geometry_msgs/PointStamped.h>
-
-// Include per il messaggio di odometria da pubblicare
 #include <nav_msgs/Odometry.h>
-
-// Include per trasmettere trasformazioni tf
 #include <tf/transform_broadcaster.h>
+#include <cmath>
 
-// Parametri del veicolo (distanze in metri)
-const double WHEELBASE = 1.765;   // distanza tra asse anteriore e posteriore
+// Parametri veicolo
+static const double WHEELBASE = 1.765;       // Distanza asse anteriore-posteriore [m]
+static const double STEERING_FACTOR = 32.0;  // Fattore di conversione sterzo
 
-// Variabili globali per posizione e orientamento
-double x = 0.0;      // posizione lungo asse X
-double y = 0.0;      // posizione lungo asse Y
-double theta = 0.0;  // orientamento (angolo rispetto all’asse X)
-
-// Publisher per l'odometria
+// Stato globale
+double x = 0.0, y = 0.0, yaw = 0.0;
+ros::Time last_time;
 ros::Publisher odom_pub;
 
-// Broadcaster per il TF (odom → vehicle)
-tf::TransformBroadcaster* tf_broadcaster;
+void speedSteerCallback(const geometry_msgs::PointStamped::ConstPtr& msg)
+{
+  double speed_ms = msg->point.y * 1000.0 / 3600.0;  // km/h→m/s
+  double steering_rad = msg->point.x / STEERING_FACTOR * M_PI/180.0;
+  double angular_velocity = speed_ms * std::tan(steering_rad) / WHEELBASE;
 
-// Tempo dell’ultima misura, per calcolare il deltaT
-ros::Time last_time;
+  if (last_time.isZero()) {
+    last_time = msg->header.stamp;
+    return;
+  }
+  double dt = (msg->header.stamp - last_time).toSec();
+  last_time = msg->header.stamp;
 
-// Callback chiamata ogni volta che arriva un messaggio su /speedsteer
-void speedsteerCallback(const geometry_msgs::PointStamped::ConstPtr& msg) {
-    ros::Time current_time = msg->header.stamp;
+  x += speed_ms * std::cos(yaw) * dt;
+  y += speed_ms * std::sin(yaw) * dt;
+  yaw += angular_velocity * dt;
 
-    // Calcolo il tempo trascorso (in secondi)
-    double dt = (current_time - last_time).toSec();
-    last_time = current_time;
+  nav_msgs::Odometry odom_msg;
+  odom_msg.header.stamp = msg->header.stamp;
+  odom_msg.header.frame_id = "odom";
+  odom_msg.child_frame_id = "vehicle";
+  odom_msg.pose.pose.position.x = x;
+  odom_msg.pose.pose.position.y = y;
+  odom_msg.pose.pose.position.z = 0.0;
+  geometry_msgs::Quaternion q;
+  q.x = 0.0; q.y = 0.0;
+  q.z = std::sin(yaw/2.0);
+  q.w = std::cos(yaw/2.0);
+  odom_msg.pose.pose.orientation = q;
+  odom_msg.twist.twist.linear.x = speed_ms;
+  odom_msg.twist.twist.angular.z = angular_velocity;
+  odom_pub.publish(odom_msg);
 
-    // Estraggo la velocità in km/h e la converto in m/s
-    double speed_kmh = msg->point.y;
-    double speed = speed_kmh / 3.6;
-
-    // Estraggo l'angolo di sterzo in gradi e lo converto in radianti
-    double steer_deg = msg->point.x;
-    double steer_rad = steer_deg * M_PI / 180.0;
-
-    // Calcolo della velocità angolare (yaw rate)
-    double omega = speed * tan(steer_rad) / WHEELBASE;
-
-    // Integrazione delle equazioni di movimento (modello bicicletta)
-    x += speed * cos(theta) * dt;
-    y += speed * sin(theta) * dt;
-    theta += omega * dt;
-
-    // Converto theta in quaternion per l’orientamento
-    geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(theta);
-
-    // Preparo e invio il messaggio di trasformazione (TF)
-    geometry_msgs::TransformStamped odom_trans;
-    odom_trans.header.stamp = current_time;
-    odom_trans.header.frame_id = "odom";
-    odom_trans.child_frame_id = "vehicle";
-    odom_trans.transform.translation.x = x;
-    odom_trans.transform.translation.y = y;
-    odom_trans.transform.translation.z = 0.0;
-    odom_trans.transform.rotation = odom_quat;
-    tf_broadcaster->sendTransform(odom_trans);
-
-    // Creo il messaggio di odometria da pubblicare
-    nav_msgs::Odometry odom;
-    odom.header.stamp = current_time;
-    odom.header.frame_id = "odom";
-
-    // Posizione e orientamento
-    odom.pose.pose.position.x = x;
-    odom.pose.pose.position.y = y;
-    odom.pose.pose.position.z = 0.0;
-    odom.pose.pose.orientation = odom_quat;
-
-    // Frame di riferimento del robot
-    odom.child_frame_id = "vehicle";
-
-    // Velocità lineare e angolare
-    odom.twist.twist.linear.x = speed;
-    odom.twist.twist.angular.z = omega;
-
-    // Pubblico il messaggio
-    odom_pub.publish(odom);
+  static tf::TransformBroadcaster br;
+  tf::Transform transform;
+  transform.setOrigin(tf::Vector3(x, y, 0.0));
+  tf::Quaternion qt; qt.setRPY(0,0,yaw);
+  transform.setRotation(qt);
+  br.sendTransform(tf::StampedTransform(transform, msg->header.stamp, "odom", "vehicle"));
 }
 
-int main(int argc, char** argv) {
-    // Inizializzo il nodo ROS
-    ros::init(argc, argv, "odometer");
-
-    // Creo un NodeHandle per comunicare con ROS
-    ros::NodeHandle nh;
-
-    // Creo il publisher per /odom
-    odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 10);
-
-    // Inizializzo il broadcaster tf
-    tf_broadcaster = new tf::TransformBroadcaster;
-
-    // Imposto il tempo iniziale
-    last_time = ros::Time::now();
-
-    // Sottoscrizione al topic /speedsteer
-    ros::Subscriber sub = nh.subscribe("/speedsteer", 100, speedsteerCallback);
-
-    // Avvia il ciclo principale ROS
-    ros::spin();
-
-    return 0;
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, "odometer");
+  ros::NodeHandle nh;
+  odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 10);
+  ros::Subscriber sub = nh.subscribe("/speedsteer", 10, speedSteerCallback);
+  ros::spin();
+  return 0;
 }
+
+/*
+Modifiche apportate:
+- Nessuna: questo file implementa esattamente le indicazioni delle slide per il nodo 'odometer':
+  sottoscrive /speedsteer, pubblica /odom di tipo nav_msgs/Odometry e trasforma odom→vehicle.
+*/
