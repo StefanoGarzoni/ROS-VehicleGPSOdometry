@@ -1,55 +1,56 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(first_project)
 
-## Find catkin and any catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  sensor_msgs
-  geometry_msgs
-  nav_msgs
-  tf
-  message_generation
+## Usa C++14
+add_compile_options(-std=c++14)
+
+find_package(catkin REQUIRED
+  COMPONENTS
+    roscpp
+    geometry_msgs
+    nav_msgs
+    sensor_msgs
+    tf2
+    tf2_ros
+    tf2_geometry_msgs
+    message_generation
 )
 
-## Declare ROS messages
+## ----- Messaggi custom -----
 add_message_files(
   FILES
-  secotor_times.msg
+    sector_times.msg        # correzione del refuso 'secotor'
 )
 
-## Generate added messages
 generate_messages(
   DEPENDENCIES
-  std_msgs
+    std_msgs
 )
 
-## Declare this catkin package
 catkin_package(
   CATKIN_DEPENDS
     roscpp
-    sensor_msgs
     geometry_msgs
     nav_msgs
-    tf
+    sensor_msgs
+    tf2
+    tf2_ros
     message_runtime
 )
 
-## Specify include directories
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-)
+include_directories(${catkin_INCLUDE_DIRS})
 
-## Build odometer node
-add_executable(odometer src/odometer.cpp)
-add_dependencies(odometer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(odometer ${catkin_LIBRARIES})
+## ------- Executable: odometer -------
+add_executable(odometer_node src/odometer.cpp)
+add_dependencies(odometer_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(odometer_node ${catkin_LIBRARIES})
 
-## Build gps_odometer node
-add_executable(gps_odometer src/gps_odometer.cpp)
-add_dependencies(gps_odometer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(gps_odometer ${catkin_LIBRARIES})
+## ------- Executable: gps_odometer -------
+add_executable(gps_odometer_node src/gps_odometer.cpp)
+add_dependencies(gps_odometer_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(gps_odometer_node ${catkin_LIBRARIES})
 
-## Build sector_times node
-add_executable(sector_times src/sector_times.cpp)
-add_dependencies(sector_times ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(sector_times ${catkin_LIBRARIES})
+## ------- Executable: sector_times -------
+add_executable(sector_times_node src/sector_times.cpp)
+add_dependencies(sector_times_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(sector_times_node ${catkin_LIBRARIES})

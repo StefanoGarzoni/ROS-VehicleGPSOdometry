@@ -1,26 +1,32 @@
 <launch>
-  <!-- Nodo odometry da /speedsteer -->
-  <node pkg="first_project"
-        type="odometer"
-        name="odometer"
-        output="screen"/>
+  <!-- Parametri globali -->
+  <arg name="wheelbase"   default="1.765"/>
+  <arg name="steer_factor" default="32.0"/>
 
-  <!-- Nodo odometry da GPS -->
-  <node pkg="first_project"
-        type="gps_odometer"
-        name="gps_odometer"
-        output="screen"/>
+  <!-- Parametri GPS: usa primo fix -->
+  <arg name="lat_r" default="NaN"/>
+  <arg name="lon_r" default="NaN"/>
+  <arg name="alt_r" default="NaN"/>
 
-  <!-- Nodo calcolo tempi di settore -->
-  <node pkg="first_project"
-        type="sector_times"
-        name="sector_times"
-        output="screen"/>
+  <!-- Nodo 1: odometer -->
+  <node pkg="first_project" type="odometer_node" name="odometer" output="screen">
+    <param name="wheelbase" value="$(arg wheelbase)"/>
+    <param name="steer_factor" value="$(arg steer_factor)"/>
+  </node>
 
-  <!-- RViz con configurazione personalizzata -->
-  <node pkg="rviz"
-        type="rviz"
-        name="rviz"
-        args="-d $(find first_project)/rviz/first_project.rviz"
-        output="screen"/>
+  <!--  Nodo 2: gps_odometer  -->
+  <node pkg="first_project" type="gps_odometer_node" name="gps_odometer" output="screen">
+    <param name="lat_r" value="$(arg lat_r)"/>
+    <param name="lon_r" value="$(arg lon_r)"/>
+    <param name="alt_r" value="$(arg alt_r)"/>
+  </node>
+
+  <!--  Nodo 3: sector_times  -->
+  <node pkg="first_project" type="sector_times_node" name="sector_times" output="screen">
+    <param name="sector_length" value="250.0"/>
+  </node>
+
+  <!-- RViz con configurazione -->
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find first_project)/rviz/first_project.rviz" />
+
 </launch>
