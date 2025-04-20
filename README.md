@@ -22,3 +22,4 @@ penso che i valori dovrebbero essere di più dato che dopo il terzo va avanti il
 ->ricontrollare che i metri di suddivisione siano giusti, 
 
 gps_pose pubblica parecchi valori con 0...
+(potrebbe non voler dire niente)
