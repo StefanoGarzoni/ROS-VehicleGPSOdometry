@@ -23,7 +23,9 @@
 
   <!--  Nodo 3: sector_times  -->
   <node pkg="first_project" type="sector_times_node" name="sector_times" output="screen">
-    <param name="sector_length" value="250.0"/>
+    <param name="first_sector_length" value="1500.0"/>
+    <param name="second_sector_length" value="2000.0"/>
+    <param name="third_sector_length" value="2293.0"/>
   </node>
 
   <!-- RViz con configurazione -->

@@ -3,6 +3,7 @@
   <version>0.0.1</version>
   <description>Robotics first_project</description>
   <maintainer email="stefano.garzoni@mail.polimi.it">Stefano Garzoni</maintainer>
+  <maintainer email="nicolo.spuri@mail.polimi.it">Nicolò Spuri</maintainer>
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
