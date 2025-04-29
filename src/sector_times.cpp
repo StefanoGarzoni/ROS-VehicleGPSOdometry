@@ -1,11 +1,4 @@
-/*************************************************************
- * Nodo 3 – sector_times
- * Divide il circuito in settori di lunghezza parametrica
- * sul percorso ENU ricavato dal GPS.
- * Pubblica il messaggio custom sector_times.
- * NOTA: in assenza di way‑points reali nel bag, l'approccio
- * più generico è basarsi sulla distanza percorsa.
- *************************************************************/
+//NODO 3: sector_times
 
 #include <ros/ros.h>
 #include <sensor_msgs/NavSatFix.h>
@@ -22,6 +15,7 @@ double last_n = 0;
 bool first_fix = true;
 
 double current_sector_length;
+double first_sector_length;
 double second_sector_length;
 double third_sector_length;
 int current_sector = 1;
@@ -38,18 +32,18 @@ ros::Publisher sector_pub;
 inline double haversine2D(double dx, double dy) { return sqrt(dx*dx + dy*dy); }
 
 struct ECEF { double x, y, z; };
-struct ENU { double e, n; };
+struct ENU { double e, n, u; };
 
 constexpr double a = 6378137.0;
 constexpr double b = 6356752.0;
 constexpr double e2 = (a*a - b*b)/(a*a);
 
-// Conversioni
+// Conversioni:
 
-// gradi → radianti
+// gradi -> radianti
 inline double d2r(double deg) { return deg * M_PI/180.0; }
 
-// LLA -> ECEF (slide Formulas) :contentReference[oaicite:36]{index=36}&#8203;:contentReference[oaicite:37]{index=37}
+// LLA -> ECEF (formula sulle slides)
 ECEF lla2ecef(double lat, double lon, double alt) {
     double phi = d2r(lat);
     double lambda = d2r(lon);
@@ -63,7 +57,7 @@ ECEF lla2ecef(double lat, double lon, double alt) {
     return {x,y,z};
 }
 
-// ECEF -> ENU (slide Formulas) :contentReference[oaicite:38]{index=38}&#8203;:contentReference[oaicite:39]{index=39}
+// ECEF -> ENU (formula sulle slides)
 ENU ecef2enu(const ECEF& p, const ECEF& ref, double lat_r, double lon_r) {
     double phi = d2r(lat_r);
     double lambda = d2r(lon_r);
@@ -72,7 +66,7 @@ ENU ecef2enu(const ECEF& p, const ECEF& ref, double lat_r, double lon_r) {
     double dy = p.y - ref.y;
     double dz = p.z - ref.z;
 
-    double sin_phi = sin(phi),
+    double sin_phi = sin(phi);
     double cos_phi = cos(phi);
     double sin_lambda = sin(lambda);
     double cos_lambda = cos(lambda);
@@ -81,12 +75,17 @@ ENU ecef2enu(const ECEF& p, const ECEF& ref, double lat_r, double lon_r) {
     double n = -sin_phi*cos_lambda*dx - sin_phi*sin_lambda*dy + cos_phi*dz;
     double u =  cos_phi*cos_lambda*dx + cos_phi*sin_lambda*dy + sin_phi*dz;
 
-    return {e,n,u};
+    ENU enu;
+    enu.e = e;
+    enu.n = n;
+    enu.u = u;
+    return enu;
+
 }
 
 // Riferimento
 bool ref_ready=false;
-bool ECEF ref_ecef;
+ECEF ref_ecef;
 double lat_r,lon_r,alt_r;
 
 // Callback GPS
@@ -131,7 +130,7 @@ void speedCB(const geometry_msgs::PointStamped::ConstPtr& msg) {
     speed_samples++;
 }
 
-// ------- Timer per controllo settore -------------------------------
+// Timer per il controllo del settore
 void timerCB(const ros::TimerEvent& ev) {
     if (accumulated_distance >= current_sector_length) {
         ros::Duration sector_time = ros::Time::now() - sector_start_time;
@@ -172,7 +171,7 @@ int main(int argc,char** argv) {
     ros::init(argc,argv,"sector_times");
     ros::NodeHandle nh("~");
 
-    nh.param("first_sector_length", current_sector_length, DEFAULT_FIRST_SECTOR_LENGTH);
+    nh.param("first_sector_length", first_sector_length, DEFAULT_FIRST_SECTOR_LENGTH);
     nh.param("second_sector_length", second_sector_length, DEFAULT_SECOND_SECTOR_LENGTH);
     nh.param("third_sector_length", third_sector_length, DEFAULT_THIRD_SECTOR_LENGTH);
 

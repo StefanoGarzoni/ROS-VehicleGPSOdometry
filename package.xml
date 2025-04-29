@@ -5,15 +5,12 @@
   <maintainer email="stefano.garzoni@mail.polimi.it">Stefano Garzoni</maintainer>
   <maintainer email="nicolo.spuri@mail.polimi.it">Nicolò Spuri</maintainer>
   <maintainer email="santiago.ceresa@mail.polimi.it">Santiago Ceresa</maintainer>
-
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>
-
-  <!-- Dipendenze runtime -->
   <depend>roscpp</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
