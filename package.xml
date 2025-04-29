@@ -4,6 +4,8 @@
   <description>Robotics first_project</description>
   <maintainer email="stefano.garzoni@mail.polimi.it">Stefano Garzoni</maintainer>
   <maintainer email="nicolo.spuri@mail.polimi.it">Nicolò Spuri</maintainer>
+  <maintainer email="santiago.ceresa@mail.polimi.it">Santiago Ceresa</maintainer>
+
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
