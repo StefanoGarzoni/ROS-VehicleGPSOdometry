@@ -12,31 +12,31 @@
  #include <tf2_ros/transform_broadcaster.h>
  #include <tf2/LinearMath/Quaternion.h>
  
- /// --- Costanti veicolo (override via param) ----------------
- double WHEELBASE = 1.765;          // m (176.5 cm)    slide 4 :contentReference[oaicite:32]{index=32}&#8203;:contentReference[oaicite:33]{index=33}
- double STEER_FACTOR = 32.0;        // unitless        slide 4 :contentReference[oaicite:34]{index=34}&#8203;:contentReference[oaicite:35]{index=35}
+ //costanti veicolo
+ double WHEELBASE = 1.765;
+ double STEER_FACTOR = 32.0;
  
- /// --- Variabili stato odom ---------------------------------
- double x = 0.0, y = 0.0, yaw = 0.0;   // posizione ENU in m e heading rad
+ //Variabili stato odom
+ double x = 0.0, y = 0.0, yaw = 0.0;
  ros::Time last_stamp;                 // per dt
  
- // publisher globale (più semplice senza classi)
+ // publisher globale
  ros::Publisher odom_pub;
  tf2_ros::TransformBroadcaster* tf_broadcaster;
  
- /// Helper: deg → rad
+ // conversione deg → rad
  inline double deg2rad(double d) { return d * M_PI / 180.0; }
  
- /// Callback su /speedsteer
+ // Callback su /speedsteer
  void speedsteerCB(const geometry_msgs::PointStamped::ConstPtr& msg)
  {
-     // Estrae velocità (km/h) → m/s
+     // velocità km/h → m/s
      double speed_mps = msg->point.y * (1000.0/3600.0);
  
-     // Angolo volante (deg) / fattore = angolo ruote (rad)
+     // Angolo volante (deg) / fattore = angolo ruote, deg-> rad
      double delta = deg2rad(msg->point.x / STEER_FACTOR);
  
-     // Se primo messaggio, inizializza last_stamp e ritorna
+     // Se primo messaggio, inizializza e ritorna
      if (last_stamp.isZero()) { last_stamp = msg->header.stamp; return; }
  
      // dt
@@ -47,11 +47,11 @@
      double yaw_rate = speed_mps * tan(delta) / WHEELBASE;
      yaw += yaw_rate * dt;
  
-     // Integrazione posizione (piano 2D)
+     // Integrazione posizione in 2D
      x += speed_mps * cos(yaw) * dt;
      y += speed_mps * sin(yaw) * dt;
  
-     // ---------------- Pubblica Odometry --------------------
+     //pubblicazione Odometry
      nav_msgs::Odometry odom;
      odom.header.stamp = msg->header.stamp;
      odom.header.frame_id = "odom";
@@ -73,7 +73,7 @@
  
      odom_pub.publish(odom);
  
-     // ---------------- TF broadcast -------------------------
+     //TF broadcast
      geometry_msgs::TransformStamped tf_msg;
      tf_msg.header = odom.header;
      tf_msg.child_frame_id = "base_link";
@@ -90,12 +90,11 @@
  int main(int argc, char** argv)
  {
      ros::init(argc, argv, "odometer");
-     ros::NodeHandle nh("~");      // private namespace per parametri
+     ros::NodeHandle nh("~");
  
-     // Parametri override
      nh.param("wheelbase", WHEELBASE, WHEELBASE);
      nh.param("steer_factor", STEER_FACTOR, STEER_FACTOR);
- 
+  
      odom_pub = nh.advertise<nav_msgs::Odometry>("/odom", 10);
  
      tf_broadcaster = new tf2_ros::TransformBroadcaster();
